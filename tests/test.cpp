@@ -15,8 +15,8 @@ int main() {
     ctx.add_entity("mod", "!");
     std::stringstream out;
 
-    std::stringstream ss {"Hello {{what}}. Yes, {{what}}{{mod}}"s};
-    engine.render(ss, out, ctx);
+    std::stringstream ss {"{% set what 'jim' %}\nHello {{what}}. Yes, {{what}}{{mod}}"s};
+    engine.render(ss, std::cout, ctx);
 }
 
 

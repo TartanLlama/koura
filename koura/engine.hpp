@@ -49,15 +49,15 @@ namespace koura {
             return name;
         }
 
-        inline std::optional<entity> parse_named_entity (std::istream& in, context& ctx) {
+        inline entity& parse_named_entity (std::istream& in, context& ctx) {
             auto name = get_identifier(in);
         
-            auto ent = ctx.get_entity(std::string{name});
+            auto& ent = ctx.get_entity(std::string{name});
 
             eat_whitespace(in);
 
             if (ent.get_type() == entity::type::text) {
-                return {ent};
+                return ent;
             }
             else {
                 auto next = in.peek();
@@ -80,8 +80,6 @@ namespace koura {
                     //TODO handle list access
                 }
             }
-
-            return {};
         }
 
         
@@ -89,10 +87,12 @@ namespace koura {
             auto c = peek(in);
             //String literal
             if (c == '\'') {
+                in.get();
                 koura::text_t text;
                 while (in.peek() != '\'') {
                     text += in.get();
                 }
+                in.get();
                 return entity{text};
             }
             //Number literal
@@ -126,7 +126,7 @@ namespace koura {
         }
 
         inline void handle_set_expression (std::istream& in, std::ostream& out, context& ctx) {
-            auto ent = parse_named_entity(in, ctx).value();
+            auto& ent = parse_named_entity(in, ctx);
             auto val = parse_entity(in, ctx).value();
 
             switch (ent.get_type()) {
@@ -134,8 +134,12 @@ namespace koura {
                 ent.get_value<koura::number_t>() = val.get_value<koura::number_t>();
                 return;
             case koura::entity::type::text:
+            {
                 ent.get_value<koura::text_t>() = val.get_value<koura::text_t>();
+                auto a = ent.get_value<koura::text_t>();
+                auto b = val.get_value<koura::text_t>();                
                 return;
+            }
             case koura::entity::type::object:
                 ent.get_value<koura::object_t>() = val.get_value<koura::object_t>();
                 return;
@@ -202,15 +206,18 @@ namespace koura {
             }
 
             assert(in.get() == '}');
+
+            //Get rid of one trailing whitespace
+            if (in.peek() == '\n') in.get();
         }
         
         void handle_variable_tag (std::istream& in, std::ostream& out, context& ctx) {
             auto ent = parse_named_entity(in, ctx);
-            if (!ent || ent.value().get_type() != entity::type::text) {
+            if (ent.get_type() != entity::type::text) {
                 //TODO error
             }
 
-            auto text = ent.value().get_value<text_t>();
+            auto text = ent.get_value<text_t>();
         
             eat_whitespace(in);
         
