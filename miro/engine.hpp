@@ -16,7 +16,7 @@ namespace miro {
     namespace {
         inline void stream_up_to_tag (std::istream& in, std::ostream& out) {
             char c;
-            while (c = in.get()) {
+            while (c = in.get(), in) {
                 if (c == '{') {
                     auto next = in.peek();
                     if (next == '{' || next == '%') {
@@ -165,16 +165,20 @@ namespace miro {
         {}
         
         void render (std::istream& in, std::ostream& out, context& ctx) {
-            stream_up_to_tag(in, out);
-            process_tag(in, out, ctx);
+            while (in) {
+                stream_up_to_tag(in, out);
+                if (in) {
+                    process_tag(in, out, ctx);
+                }
+            }
         }
         
         void register_custom_expression (std::string_view name, expression_handler_t handler) {
-            m_expression_handlers.at(std::string{name}) = handler;
+            m_expression_handlers.emplace(std::string{name}, handler);
         }
         
         void register_custom_filter (std::string_view name, filter_t filter) {
-            m_filters.at(std::string{name}) = filter;
+            m_filters.emplace(std::string{name}, filter);
         }
 
     private:
@@ -187,13 +191,17 @@ namespace miro {
                 eat_whitespace(in);
                 handle_variable_tag(in,out,ctx);
                 eat_whitespace(in);
+                assert(in.get() == '}');
             }
 
             if (next == '%') {
                 eat_whitespace(in);            
                 handle_expression_tag(in,out,ctx);
-                eat_whitespace(in);            
+                eat_whitespace(in);
+                assert(in.get() == '%');
             }
+
+            assert(in.get() == '}');
         }
         
         void handle_variable_tag (std::istream& in, std::ostream& out, context& ctx) {

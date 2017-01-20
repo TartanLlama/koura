@@ -8,7 +8,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 add_executable(miro_test
     tests/catch_main.cpp
     tests/builtin_filters.cpp
-    tests/custom_filters.cpp       
+    tests/custom_filters.cpp
+    tests/multiple_tags.cpp                
     tests/hello.cpp)
 
 add_executable(testy

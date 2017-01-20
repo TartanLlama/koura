@@ -1,14 +1,10 @@
 #include <string>
-#include <sstream>
+#include "catch.hpp"
 #include "miro/engine.hpp"
 using namespace miro;
 using namespace std::string_literals;
 
-std::string change_to_beer(std::string_view s, miro::context&) {
-    return "beer";
-}
-
-int main() {
+TEST_CASE("multiple tags", "[multiple]") {
     miro::engine engine{};
     miro::context ctx{};
     ctx.add_entity("what", "world");
@@ -17,6 +13,6 @@ int main() {
 
     std::stringstream ss {"Hello {{what}}. Yes, {{what}}{{mod}}"s};
     engine.render(ss, out, ctx);
+    REQUIRE( out.str() == "Hello world. Yes, world!" );
 }
-
 
