@@ -1,16 +1,16 @@
-#ifndef MIRO_CONTEXT_HPP
-#define MIRO_CONTEXT_HPP
+#ifndef KOURA_CONTEXT_HPP
+#define KOURA_CONTEXT_HPP
 
 //C++
 #include <utility>
 #include <unordered_map>
 #include <string_view>
 
-//Miro
+//Koura
 #include "entity.hpp"
 #include "types.hpp"
 
-namespace miro {
+namespace koura {
     class context {
     public:
         template <class T>

@@ -1,11 +1,11 @@
 #include <string>
 #include <sstream>
-#include "miro/engine.hpp"
-using namespace miro;
+#include "koura/engine.hpp"
+using namespace koura;
 
 int main() {
-miro::engine engine{};
-    miro::context ctx{};
+koura::engine engine{};
+    koura::context ctx{};
     ctx.add_entity("what", "world");
     std::stringstream out;
 

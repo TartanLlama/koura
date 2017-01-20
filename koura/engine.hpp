@@ -1,5 +1,5 @@
-#ifndef MIRO_ENGINE_HPP
-#define MIRO_ENGINE_HPP
+#ifndef KOURA_ENGINE_HPP
+#define KOURA_ENGINE_HPP
 
 //C++
 #include <iostream>
@@ -8,11 +8,11 @@
 #include <functional>
 #include <cassert>
 
-//Miro
+//Koura
 #include "context.hpp"
 #include "filters.hpp"
 
-namespace miro {
+namespace koura {
     namespace {
         inline void stream_up_to_tag (std::istream& in, std::ostream& out) {
             char c;
@@ -85,11 +85,11 @@ namespace miro {
         }
 
         
-        inline std::optional<miro::entity> parse_entity (std::istream& in, miro::context& ctx) {
+        inline std::optional<koura::entity> parse_entity (std::istream& in, koura::context& ctx) {
             auto c = peek(in);
             //String literal
             if (c == '\'') {
-                miro::text_t text;
+                koura::text_t text;
                 while (in.peek() != '\'') {
                     text += in.get();
                 }
@@ -97,7 +97,7 @@ namespace miro {
             }
             //Number literal
             else if (std::isdigit(c)) {
-                miro::number_t num;
+                koura::number_t num;
                 in >> num;
                 return entity{num};
             }
@@ -130,16 +130,16 @@ namespace miro {
             auto val = parse_entity(in, ctx).value();
 
             switch (ent.get_type()) {
-            case miro::entity::type::number:
-                ent.get_value<miro::number_t>() = val.get_value<miro::number_t>();
+            case koura::entity::type::number:
+                ent.get_value<koura::number_t>() = val.get_value<koura::number_t>();
                 return;
-            case miro::entity::type::text:
-                ent.get_value<miro::text_t>() = val.get_value<miro::text_t>();
+            case koura::entity::type::text:
+                ent.get_value<koura::text_t>() = val.get_value<koura::text_t>();
                 return;
-            case miro::entity::type::object:
-                ent.get_value<miro::object_t>() = val.get_value<miro::object_t>();
+            case koura::entity::type::object:
+                ent.get_value<koura::object_t>() = val.get_value<koura::object_t>();
                 return;
-            case miro::entity::type::list:
+            case koura::entity::type::list:
                 //TODO
                 return;
             }

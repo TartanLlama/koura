@@ -1,14 +1,14 @@
-#ifndef MIRO_ENTITY_HPP
-#define MIRO_ENTITY_HPP
+#ifndef KOURA_ENTITY_HPP
+#define KOURA_ENTITY_HPP
 
 //C++
 #include <utility>
 #include <any>
 
-//Miro
+//Koura
 #include "types.hpp"
 
-namespace miro {
+namespace koura {
     class entity {
     public:
         enum class type {

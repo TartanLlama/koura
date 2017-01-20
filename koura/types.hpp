@@ -1,12 +1,12 @@
-#ifndef MIRO_TYPES_HPP
-#define MIRO_TYPES_HPP
+#ifndef KOURA_TYPES_HPP
+#define KOURA_TYPES_HPP
 
 #include <string_view>
 #include <unordered_map>
 #include <vector>
 #include <string>
 
-namespace miro {
+namespace koura {
     class entity;
 
     using number_t = int;

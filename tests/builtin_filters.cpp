@@ -1,12 +1,12 @@
 #include <string>
 #include "catch.hpp"
-#include "miro/engine.hpp"
-using namespace miro;
+#include "koura/engine.hpp"
+using namespace koura;
 using namespace std::string_literals;
 
 TEST_CASE("built-in filters", "[builtin_filters]") {
-    miro::engine engine{};
-    miro::context ctx{};
+    koura::engine engine{};
+    koura::context ctx{};
     ctx.add_entity("what", "world");
     std::stringstream out;
 

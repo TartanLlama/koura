@@ -1,16 +1,16 @@
 #include <string>
 #include "catch.hpp"
-#include "miro/engine.hpp"
-using namespace miro;
+#include "koura/engine.hpp"
+using namespace koura;
 using namespace std::string_literals;
 
-std::string change_to_cheese(std::string_view text, miro::context&) {
+std::string change_to_cheese(std::string_view text, koura::context&) {
     return "cheese";
 }
 
 TEST_CASE("custom filters", "[custom_filters]") {
-    miro::engine engine{};
-    miro::context ctx{};
+    koura::engine engine{};
+    koura::context ctx{};
     ctx.add_entity("what", "world");
     std::stringstream out;
 

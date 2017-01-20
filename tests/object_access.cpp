@@ -1,13 +1,13 @@
 #include <string>
 #include "catch.hpp"
-#include "miro/engine.hpp"
-using namespace miro;
+#include "koura/engine.hpp"
+using namespace koura;
 
 TEST_CASE("object access", "[object-access]") {
-    miro::engine engine{};
-    miro::context ctx{};
-    miro::object_t what;
-    what["name"] = miro::text_t{"world"};
+    koura::engine engine{};
+    koura::context ctx{};
+    koura::object_t what;
+    what["name"] = koura::text_t{"world"};
     ctx.add_entity("what", what);
     std::stringstream out;
 
