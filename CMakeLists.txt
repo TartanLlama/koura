@@ -10,7 +10,8 @@ add_executable(koura_test
     tests/builtin_filters.cpp
     tests/custom_filters.cpp
     tests/multiple_tags.cpp
-    tests/set.cpp                 
+    tests/set.cpp
+    tests/for.cpp
     tests/hello.cpp)
 
 add_executable(testy
@@ -18,5 +19,3 @@ add_executable(testy
 
 enable_testing()
 add_test( koura_test koura_test )
-
-
