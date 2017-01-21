@@ -12,9 +12,7 @@ namespace koura {
     using number_t = int;
     using text_t = std::string;
     using object_t = std::unordered_map<std::string, entity>;
-        
-    template <typename T>
-    using list_t = std::vector<T>;
-}    
+    using sequence_t = std::vector<entity>;
+}
 
 #endif

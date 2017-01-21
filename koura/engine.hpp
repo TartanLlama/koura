@@ -13,7 +13,9 @@
 #include "filters.hpp"
 
 namespace koura {
-    namespace {
+    class engine;
+
+    namespace detail {
         inline void stream_up_to_tag (std::istream& in, std::ostream& out) {
             char c;
             while (c = in.get(), in) {
@@ -51,7 +53,7 @@ namespace koura {
 
         inline entity& parse_named_entity (std::istream& in, context& ctx) {
             auto name = get_identifier(in);
-        
+
             auto& ent = ctx.get_entity(std::string{name});
 
             eat_whitespace(in);
@@ -59,7 +61,7 @@ namespace koura {
             if (ent.get_type() == entity::type::text) {
                 return ent;
             }
-            else {
+            else if (ent.get_type() == entity::type::object) {
                 auto next = in.peek();
 
                 if (next == '.') {
@@ -76,14 +78,13 @@ namespace koura {
 
                     return {ent_obj.at(field_name)};
                 }
-                else if (next == '[') {
-                    //TODO handle list access
-                }
+            }
+            else if (ent.get_type() == entity::type::sequence) {
+                return ent;
             }
         }
 
-        
-        inline std::optional<koura::entity> parse_entity (std::istream& in, koura::context& ctx) {
+        inline koura::entity parse_entity (std::istream& in, koura::context& ctx) {
             auto c = peek(in);
             //String literal
             if (c == '\'') {
@@ -109,127 +110,206 @@ namespace koura {
             else {
                 return parse_named_entity(in,ctx);
             }
-        }
-    
-        inline void handle_if_expression (std::istream& in, std::ostream& out, context& ctx) {
-            auto ent = parse_entity(in, ctx);
 
-        
+            //TODO error
         }
 
-        inline void handle_for_expression (std::istream& in, std::ostream& out, context& ctx) {
+
+        inline void expect_text(std::istream& in, std::string_view expected) {
+            std::string got;
+            in >> got;
+            if (got != expected) {
+                //TODO error
+            }
+        }
+
+        inline void eat_tag (std::istream& in) {
+            eat_whitespace(in);
+
+            if (in.get() != '{') {
+                //TODO error
+            }
+
+            if (in.get() != '%') {
+                //TODO error
+            }
+
+            while (in.get() != '%') {
+            }
+
+            if (in.get() != '}') {
+                //TODO error
+            }
+        }
+
+
+        inline bool is_next_tag (std::istream& in, std::string_view tag) {
+            auto start_pos = in.tellg();
+            auto reset = [start_pos,&in] {in.seekg(start_pos);};
+
+            if (in.get() != '{') {
+                reset();
+                return false;
+            }
+
+            if (in.get() != '%') {
+                reset();
+                return false;
+            }
+
+            while (std::isspace(in.peek())) {
+                in.get();
+            }
+
+            auto id = get_identifier(in);
+
+            if (id == tag) {
+                reset();
+                return true;
+            }
+
+            reset();
+            return false;
+        }
+
+        void process_tag (engine& eng, std::istream& in, std::ostream& out, context& ctx);
+
+        inline void process_until_tag (engine& eng, std::istream& in, std::ostream& out, context& ctx, std::string_view tag) {
+            while (true) {
+                stream_up_to_tag(in,out);
+                if (is_next_tag(in,tag)) {
+                    return;
+                }
+                process_tag(eng,in,out,ctx);
+            }
+        }
+
+        inline void handle_for_expression (engine& eng, std::istream& in, std::ostream& out, context& ctx) {
+            auto loop_var_id = get_identifier(in);
+            expect_text(in, "in");
+            auto ent = parse_entity(in,ctx);
+
+            if (in.get() != '%' || in.get() != '}') {
+                //TODO error
+            }
+
+            auto start_pos = in.tellg();
+
+            if (ent.get_type() != entity::type::sequence) {
+                //TODO error
+            }
+
+            auto seq = ent.get_value<sequence_t>();
+
+            for (auto&& loop_var : seq) {
+                in.seekg(start_pos);
+                auto ctx_with_loop_var = ctx;
+                ctx_with_loop_var.add_entity(loop_var_id, loop_var);
+
+                process_until_tag(eng,in,out,ctx_with_loop_var,"endfor");
+            }
+
+            eat_tag(in);
+        }
+
+        inline void handle_unless_expression (engine& eng, std::istream& in, std::ostream& out, context& ctx) {
 
         }
 
-        inline void handle_unless_expression (std::istream& in, std::ostream& out, context& ctx) {
-
-        }
-
-        inline void handle_set_expression (std::istream& in, std::ostream& out, context& ctx) {
+        inline void handle_set_expression (engine& eng, std::istream& in, std::ostream& out, context& ctx) {
             auto& ent = parse_named_entity(in, ctx);
-            auto val = parse_entity(in, ctx).value();
+            auto val = parse_entity(in, ctx);
 
             switch (ent.get_type()) {
             case koura::entity::type::number:
                 ent.get_value<koura::number_t>() = val.get_value<koura::number_t>();
-                return;
+                break;
             case koura::entity::type::text:
             {
                 ent.get_value<koura::text_t>() = val.get_value<koura::text_t>();
                 auto a = ent.get_value<koura::text_t>();
-                auto b = val.get_value<koura::text_t>();                
-                return;
+                auto b = val.get_value<koura::text_t>();
+                break;
             }
             case koura::entity::type::object:
                 ent.get_value<koura::object_t>() = val.get_value<koura::object_t>();
-                return;
-            case koura::entity::type::list:
+                break;
+            case koura::entity::type::sequence:
                 //TODO
-                return;
+                break;
             }
+
+            eat_whitespace(in);
+            assert(in.get() == '%');
+            assert(in.get() == '}');
+        }
+
+        inline void handle_if_expression (engine& eng, std::istream& in, std::ostream& out, context& ctx) {
+            auto ent = parse_entity(in, ctx);
+
+
         }
     }
 
     class engine {
     public:
-        using expression_handler_t = std::function<void(std::istream&, std::ostream&, context&)>;
+        using expression_handler_t = std::function<void(engine&,std::istream&, std::ostream&, context&)>;
         using filter_t = std::function<std::string(std::string_view, context&)>;
-        
+
         engine() :
             m_expression_handlers{
-              {"if", handle_if_expression},
-              {"unless", handle_unless_expression},
-              {"set", handle_set_expression},
-              {"for", handle_for_expression}
+              {"if", detail::handle_if_expression},
+              {"unless", detail::handle_unless_expression},
+              {"set", detail::handle_set_expression},
+              {"for", detail::handle_for_expression}
             },
 
             m_filters{
               {"capitalize", filters::capitalize}
             }
         {}
-        
+
         void render (std::istream& in, std::ostream& out, context& ctx) {
             while (in) {
-                stream_up_to_tag(in, out);
+                detail::stream_up_to_tag(in, out);
                 if (in) {
-                    process_tag(in, out, ctx);
+                    detail::process_tag(*this, in, out, ctx);
                 }
             }
         }
-        
+
         void register_custom_expression (std::string_view name, expression_handler_t handler) {
             m_expression_handlers.emplace(std::string{name}, handler);
         }
-        
+
         void register_custom_filter (std::string_view name, filter_t filter) {
             m_filters.emplace(std::string{name}, filter);
         }
 
-    private:
-        void process_tag (std::istream& in, std::ostream& out, context& ctx) {
-            assert(in.get() == '{');
 
-            auto next = in.get();
 
-            if (next == '{') {
-                eat_whitespace(in);
-                handle_variable_tag(in,out,ctx);
-                eat_whitespace(in);
-                assert(in.get() == '}');
-            }
-
-            if (next == '%') {
-                eat_whitespace(in);            
-                handle_expression_tag(in,out,ctx);
-                eat_whitespace(in);
-                assert(in.get() == '%');
-            }
-
-            assert(in.get() == '}');
-
-            //Get rid of one trailing whitespace
-            if (in.peek() == '\n') in.get();
-        }
-        
-        void handle_variable_tag (std::istream& in, std::ostream& out, context& ctx) {
-            auto ent = parse_named_entity(in, ctx);
+        inline void handle_variable_tag (std::istream& in, std::ostream& out, context& ctx) {
+            auto ent = detail::parse_named_entity(in, ctx);
             if (ent.get_type() != entity::type::text) {
                 //TODO error
             }
 
             auto text = ent.get_value<text_t>();
-        
-            eat_whitespace(in);
-        
+
+            detail::eat_whitespace(in);
+
             while (in.peek() == '|') {
                 in.get();
                 text = handle_filter(in, ctx, text);
-                eat_whitespace(in);
+                detail::eat_whitespace(in);
             }
-        
+
             out << text;
+
+            assert(in.get() == '}');
+            assert(in.get() == '}');
         }
-        
+
         void handle_expression_tag (std::istream& in, std::ostream& out, context& ctx) {
             std::string tag_name;
             in >> tag_name;
@@ -238,23 +318,44 @@ namespace koura {
                 //TODO error
             }
 
-            m_expression_handlers[tag_name](in,out,ctx);
+            m_expression_handlers[tag_name](*this,in,out,ctx);
         }
-        
+
         auto handle_filter (std::istream& in, context& ctx, std::string_view text) -> std::string {
-            auto filter_name = get_identifier(in);
-        
+            auto filter_name = detail::get_identifier(in);
+
             if (!m_filters.count(filter_name)) {
                 //TODO error
             }
 
             return m_filters[filter_name](text,ctx);
         }
-        
+
+    private:
         std::unordered_map<std::string, expression_handler_t> m_expression_handlers;
         std::unordered_map<std::string, filter_t> m_filters;
     };
 
+    namespace detail {
+        inline void process_tag (engine& eng, std::istream& in, std::ostream& out, context& ctx) {
+            assert(in.get() == '{');
+
+            auto next = in.get();
+
+            if (next == '{') {
+                eat_whitespace(in);
+                eng.handle_variable_tag(in,out,ctx);
+            }
+
+            if (next == '%') {
+                eat_whitespace(in);
+                eng.handle_expression_tag(in,out,ctx);
+            }
+
+            //Get rid of one trailing whitespace
+            if (in.peek() == '\n') in.get();
+        }
+    }
 }
 
 #endif
