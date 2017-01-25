@@ -74,13 +74,35 @@ TEST_CASE("object access", "[object-access]") {
     koura::engine engine{};
     koura::context ctx{};
     koura::object_t what;
-    what["name"] = koura::text_t{"world"};
-    ctx.add_entity("what", what);
     std::stringstream out;
 
-    std::stringstream ss {"Hello {{what.name}}"s};
-    engine.render(ss, out, ctx);
-    REQUIRE( out.str() == "Hello world" );
+    SECTION ("access text") {
+        what["name"] = koura::text_t{"world"};
+        ctx.add_entity("what", what);
+        std::stringstream ss {"Hello {{what.name}}"s};
+        engine.render(ss, out, ctx);
+        REQUIRE( out.str() == "Hello world" );
+    }
+
+    SECTION ("access number") {
+        what["num"] = koura::number_t{42};
+        ctx.add_entity("what", what);
+        std::stringstream ss {"Hello {{what.num}}"s};
+        engine.render(ss, out, ctx);
+        REQUIRE( out.str() == "Hello 42" );
+    }
+
+    SECTION ("access object") {
+        koura::object_t huh;
+        huh["name"] = koura::text_t{"world"};
+
+        what["huh"] = huh;
+        ctx.add_entity("what", what);
+
+        std::stringstream ss {"Hello {{what.huh.name}}"s};
+        engine.render(ss, out, ctx);
+        REQUIRE( out.str() == "Hello world" );
+    }
 }
 
 TEST_CASE("multiple tags", "[multiple]") {

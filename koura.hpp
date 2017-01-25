@@ -10,12 +10,21 @@
 #include <algorithm>
 
 namespace koura {
+
     class entity;
 
     using number_t = int;
     using text_t = std::string;
     using object_t = std::unordered_map<std::string, entity>;
     using sequence_t = std::vector<entity>;
+
+    /// An error which occured during rendering
+    class render_error : public std::runtime_error {
+    public:
+        render_error(std::istream& in) :
+            std::runtime_error{"Render error occurred"}
+        {}
+    };
 
     /// An entity within the Koura templating language.
     ///
@@ -140,7 +149,7 @@ namespace koura {
 
             eat_whitespace(in);
 
-            if (ent.get_type() == entity::type::text) {
+            if (ent.get_type() == entity::type::text || ent.get_type() == entity::type::number) {
                 return ent;
             }
             else if (ent.get_type() == entity::type::object) {
@@ -149,14 +158,14 @@ namespace koura {
                 if (next == '.') {
                     in.get();
                     if (ent.get_type() != entity::type::object) {
-                        //TODO error
+                        throw render_error{in};
                     }
 
                     auto field_name = get_identifier(in);
                     auto& ent_obj = ent.get_value<object_t>();
 
                     if (!ent_obj.count(field_name)) {
-                        //TODO error
+                        throw render_error{in};
                     }
 
                     return ent_obj.at(field_name);
@@ -194,7 +203,7 @@ namespace koura {
                 return parse_named_entity(in,ctx);
             }
 
-            //TODO error
+            throw render_error{in};
         }
 
 
@@ -202,7 +211,7 @@ namespace koura {
             std::string got;
             in >> got;
             if (got != expected) {
-                //TODO error
+                throw render_error{in};
             }
         }
 
@@ -210,18 +219,18 @@ namespace koura {
             eat_whitespace(in);
 
             if (in.get() != '{') {
-                //TODO error
+                throw render_error{in};
             }
 
             if (in.get() != '%') {
-                //TODO error
+                throw render_error{in};
             }
 
             while (in.get() != '%') {
             }
 
             if (in.get() != '}') {
-                //TODO error
+                throw render_error{in};
             }
         }
 
@@ -288,13 +297,13 @@ namespace koura {
             auto ent = parse_entity(in,ctx);
 
             if (in.get() != '%' || in.get() != '}') {
-                //TODO error
+                throw render_error{in};
             }
 
             auto start_pos = in.tellg();
 
             if (ent.get_type() != entity::type::sequence) {
-                //TODO error
+                throw render_error{in};
             }
 
             auto seq = ent.get_value<sequence_t>();
@@ -416,7 +425,7 @@ namespace koura {
         inline void handle_variable_tag (std::istream& in, std::ostream& out, context& ctx) {
             auto ent = detail::parse_named_entity(in, ctx);
             if (ent.get_type() != entity::type::text) {
-                //TODO error
+                throw render_error{in};
             }
 
             auto text = ent.get_value<text_t>();
@@ -440,7 +449,7 @@ namespace koura {
             in >> tag_name;
 
             if (!m_expression_handlers.count(tag_name)) {
-                //TODO error
+                throw render_error{in};
             }
 
             m_expression_handlers[tag_name](*this,in,out,ctx);
@@ -450,7 +459,7 @@ namespace koura {
             auto filter_name = detail::get_identifier(in);
 
             if (!m_filters.count(filter_name)) {
-                //TODO error
+                throw render_error{in};
             }
 
             return m_filters[filter_name](text,ctx);
