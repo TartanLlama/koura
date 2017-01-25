@@ -1,4 +1,4 @@
-#includ <iostream>
+#include <iostream>
 #include <optional>
 #include <cctype>
 #include <functional>
@@ -27,6 +27,7 @@ namespace koura {
             text, number, object, sequence
         };
 
+        entity () = default;
         entity (text_t value) : m_type{type::text}, m_value{std::move(value)} {}
         entity (number_t value) : m_type{type::number}, m_value{std::move(value)} {}
         entity (object_t value) : m_type{type::object}, m_value{std::move(value)} {}
@@ -383,7 +384,7 @@ namespace koura {
             },
 
             m_filters{
-              {"capitalize", filters::capitalize}
+              {"capitalise", filters::capitalise}
             }
         {}
 
