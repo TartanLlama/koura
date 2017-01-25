@@ -424,11 +424,11 @@ namespace koura {
 
         inline void handle_variable_tag (std::istream& in, std::ostream& out, context& ctx) {
             auto ent = detail::parse_named_entity(in, ctx);
-            if (ent.get_type() != entity::type::text) {
+            if (ent.get_type() != entity::type::text && ent.get_type() != entity::type::number) {
                 throw render_error{in};
             }
 
-            auto text = ent.get_value<text_t>();
+            auto text = ent.get_type() == entity::type::text ? ent.get_value<text_t>() : std::to_string(ent.get_value<number_t>());
 
             detail::eat_whitespace(in);
 
