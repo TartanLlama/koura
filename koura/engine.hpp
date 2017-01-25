@@ -16,6 +16,10 @@ namespace koura {
     class engine;
 
     namespace detail {
+        inline bool is_block_tag (std::string_view tag) {
+            return (tag == "if" || tag == "for");
+        }
+        
         inline void stream_up_to_tag (std::istream& in, std::ostream& out) {
             char c;
             while (c = in.get(), in) {
@@ -30,6 +34,19 @@ namespace koura {
             }
         }
 
+        inline void skip_up_to_tag (std::istream& in, std::ostream& out) {
+            char c;
+            while (c = in.get(), in) {
+                if (c == '{') {
+                    auto next = in.peek();
+                    if (next == '{' || next == '%') {
+                        in.unget();
+                        return;
+                    }
+                }
+            }
+        }
+        
         inline void eat_whitespace (std::istream& in) {
             while (std::isspace(in.peek())) {
                 in.get();
@@ -142,7 +159,10 @@ namespace koura {
             }
         }
 
-
+        inline bool is_truthy (entity& ent) {
+            return true;
+        }
+        
         inline bool is_next_tag (std::istream& in, std::string_view tag) {
             auto start_pos = in.tellg();
             auto reset = [start_pos,&in] {in.seekg(start_pos);};
@@ -173,6 +193,7 @@ namespace koura {
         }
 
         void process_tag (engine& eng, std::istream& in, std::ostream& out, context& ctx);
+        void skip_tag (engine& eng, std::istream& in, std::ostream& out, context& ctx);
 
         inline void process_until_tag (engine& eng, std::istream& in, std::ostream& out, context& ctx, std::string_view tag) {
             while (true) {
@@ -183,6 +204,17 @@ namespace koura {
                 process_tag(eng,in,out,ctx);
             }
         }
+
+        inline void skip_until_tag (engine& eng, std::istream& in, std::ostream& out, context& ctx, std::string_view tag) {
+            while (true) {
+                skip_up_to_tag(in,out);
+                if (is_next_tag(in,tag)) {
+                    return;
+                }
+                skip_tag(eng,in,out,ctx);
+            }
+        }
+
 
         inline void handle_for_expression (engine& eng, std::istream& in, std::ostream& out, context& ctx) {
             auto loop_var_id = get_identifier(in);
@@ -245,9 +277,26 @@ namespace koura {
         }
 
         inline void handle_if_expression (engine& eng, std::istream& in, std::ostream& out, context& ctx) {
-            auto ent = parse_entity(in, ctx);
-
-
+            bool cond = false;
+            try {
+                auto ent = parse_entity(in, ctx);
+                cond = is_truthy(ent);
+            }
+            catch (std::out_of_range& e) {
+                cond = false;
+            }
+            
+            eat_whitespace(in);
+            assert(in.get() == '%');
+            assert(in.get() == '}');
+            
+            if (cond) {
+                process_until_tag(eng,in,out,ctx,"endif");
+            }
+            else {
+                skip_until_tag(eng,in,out,ctx,"endif");
+            }
+            eat_tag(in);
         }
     }
 
@@ -354,6 +403,51 @@ namespace koura {
                 if (in.peek() == '\n') in.get();
             }
         }
+
+        inline void skip_tag (engine& eng, std::istream& in, std::ostream& out, context& ctx) {
+            assert(in.get() == '{');
+
+            auto next = in.get();
+
+            if (next == '{') {
+                [&]{
+                    while (true) {
+                        while (in.peek() != '}') {
+                            in.get();
+                        }
+                        if (in.peek() == '}') {
+                            return;
+                        }
+                        in.get();
+                    }
+                }();
+            }
+            
+            else if (next == '%') {
+                eat_whitespace(in);
+                auto id = get_identifier(in);
+                if (is_block_tag(id)) {
+                    skip_until_tag(eng,in,out,ctx,std::string{"end"} + id);
+                    eat_tag(in);
+                }
+                else {
+                    [&]{
+                        while (true) {
+                            while (in.peek() != '%') {
+                                in.get();
+                            }
+                            if (in.peek() == '}') {
+                                return;
+                            }
+                            in.get();
+                        }
+                    }();
+                }
+            }
+            
+            //Get rid of one trailing whitespace
+            if (in.peek() == '\n') in.get();
+        }        
     }
 }
 
