@@ -350,10 +350,9 @@ namespace koura {
             if (next == '%') {
                 eat_whitespace(in);
                 eng.handle_expression_tag(in,out,ctx);
+                //Get rid of one trailing whitespace
+                if (in.peek() == '\n') in.get();
             }
-
-            //Get rid of one trailing whitespace
-            if (in.peek() == '\n') in.get();
         }
     }
 }
