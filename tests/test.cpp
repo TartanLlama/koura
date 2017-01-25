@@ -1,22 +1,19 @@
 #include <string>
+#include <fstream>
+#include <iostream>
 #include <sstream>
-#include "koura/engine.hpp"
+#include "koura.hpp"
 using namespace koura;
 using namespace std::string_literals;
-
-std::string change_to_beer(std::string_view s, koura::context&) {
-    return "beer";
-}
 
 int main() {
     koura::engine engine{};
     koura::context ctx{};
-    ctx.add_entity("what", "world");
-    ctx.add_entity("mod", "!");
+    koura::object_t what;
+    what["name"] = koura::text_t{"world"};
+    ctx.add_entity("what", what);
     std::stringstream out;
 
-    std::stringstream ss {"{% set what 'jim' %}\nHello {{what}}. Yes, {{what}}{{mod}}"s};
+    std::stringstream ss {"Hello {{what.name}}"s};
     engine.render(ss, std::cout, ctx);
 }
-
-

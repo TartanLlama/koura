@@ -4,13 +4,9 @@
 using namespace koura;
 
 int main() {
-koura::engine engine{};
+    koura::engine engine{};
     koura::context ctx{};
-    ctx.add_entity("what", "world");
-    std::stringstream out;
-
-    std::stringstream ss {std::string{"Hello {{what|capitalize}}"}};
-    engine.render(ss, out, ctx);
-    std::cout << out.str();
+    ctx.add_entity("names", sequence_t{koura::entity_t{"Quinn"}, koura::entity_t{"Dada"}, koura::entity_t{"Mama"}});
+    std::ifstream file {"test"};
+    engine.render(file, std::cout, ctx);
 }
-

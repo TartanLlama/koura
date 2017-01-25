@@ -6,16 +6,10 @@ include_directories("." "ext/Catch/include")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 
 add_executable(koura_test
-    tests/catch_main.cpp
-    tests/builtin_filters.cpp
-    tests/custom_filters.cpp
-    tests/multiple_tags.cpp
-    tests/set.cpp
-    tests/for.cpp
-    tests/hello.cpp)
+    tests/koura_test.cpp)
 
 add_executable(testy
         tests/test.cpp)
 
 enable_testing()
-add_test( koura_test koura_test )
+add_test(koura_test koura_test)
