@@ -1,4 +1,4 @@
-#include <iostream>
+#includ <iostream>
 #include <optional>
 #include <cctype>
 #include <functional>
@@ -17,26 +17,27 @@ namespace koura {
     using object_t = std::unordered_map<std::string, entity>;
     using sequence_t = std::vector<entity>;
 
+    /// An entity within the Koura templating language.
+    ///
+    /// Can be text, a number, an object (associative array) or sequence.
     class entity {
     public:
+        /// Used to distinguish the type of an entity.
         enum class type {
             text, number, object, sequence
         };
-
-        entity() = default;
-        entity(const entity&) = default;
-        entity(entity&&) = default;
-        entity& operator=(const entity&) = default;
-        entity& operator=(entity&&) = default;
-        ~entity() = default;
 
         entity (text_t value) : m_type{type::text}, m_value{std::move(value)} {}
         entity (number_t value) : m_type{type::number}, m_value{std::move(value)} {}
         entity (object_t value) : m_type{type::object}, m_value{std::move(value)} {}
         entity (sequence_t value) : m_type{type::sequence}, m_value{std::move(value)} {}
 
+        /// Get the type of this entity.
         auto get_type() -> type { return m_type; }
 
+        /// Get the value of the entity as the given type.
+        /// \requires `T` is one of `number_t`, `text_t`, `object_t` or `sequence_t`.
+        /// \throws `koura::wrong_entity_type` if this entity does not store a `T`.
         template <class T>
         auto get_value() -> T& { return std::any_cast<T&>(m_value); }
 
@@ -45,21 +46,28 @@ namespace koura {
         std::any m_value;
     };
 
+
+    /// Manages all of the Koura variables.
     class context {
     public:
+        /// Add an entity to the context with the key `key` and the value `value` to the context.
         template <class T>
         void add_entity (std::string_view key, T&& value) {
             m_entities.emplace(key, entity{std::forward<T>(value)});
         }
 
+        /// Gets a reference to the entity with the given key.
+        /// \throws `std::out_of_range` if there is no entity matching `key`.
         auto get_entity(const std::string& key) -> entity& { return m_entities.at(key); }
 
     private:
         std::unordered_map<std::string, entity> m_entities;
     };
 
+    /// All of the standard Koura text filters.
     namespace filters {
-        inline std::string capitalize (std::string_view text, context&) {
+        /// Capitalises the given text
+        inline std::string capitalise (std::string_view text, context&) {
             std::string ret {text};
             for (auto&& c : ret) {
                 c = std::toupper(c);
@@ -357,9 +365,13 @@ namespace koura {
         }
     }
 
+    /// The Koura rendering engine.
     class engine {
     public:
+        /// The type of a custom expression handler.
         using expression_handler_t = std::function<void(engine&,std::istream&, std::ostream&, context&)>;
+
+        /// The type of a custom text filter.
         using filter_t = std::function<std::string(std::string_view, context&)>;
 
         engine() :
@@ -375,6 +387,8 @@ namespace koura {
             }
         {}
 
+
+        /// Render the text from `in` to `out` using the context `ctx`.
         void render (std::istream& in, std::ostream& out, context& ctx) {
             while (in) {
                 detail::stream_up_to_tag(in, out);
@@ -384,14 +398,18 @@ namespace koura {
             }
         }
 
+
+        /// Register a custom expression handler.
         void register_custom_expression (std::string_view name, expression_handler_t handler) {
             m_expression_handlers.emplace(std::string{name}, handler);
         }
 
+        /// Register a custom text filter.
+        /// After a filter is registered, it can be used just like a normal filter
+        /// E.g. `eng.register_custom_filter("upcase_even", upcase_even);` `{{thing | upcase_even}}`
         void register_custom_filter (std::string_view name, filter_t filter) {
             m_filters.emplace(std::string{name}, filter);
         }
-
 
 
         inline void handle_variable_tag (std::istream& in, std::ostream& out, context& ctx) {

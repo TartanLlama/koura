@@ -13,7 +13,7 @@ TEST_CASE("built-in filters", "[builtin_filters]") {
     std::stringstream out;
 
     SECTION ("capitalize") {
-        std::stringstream ss {"Hello {{what|capitalize}}"s};
+        std::stringstream ss {"Hello {{what|capitalise}}"s};
         engine.render(ss, out, ctx);
         REQUIRE( out.str() == "Hello WORLD" );
     }

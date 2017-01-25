@@ -13,3 +13,11 @@ add_executable(testy
 
 enable_testing()
 add_test(koura_test koura_test)
+
+set(STANDARDESE_TOOL ext/standardese/build/tool/standardese)
+include(ext/standardese/standardese-config.cmake)
+
+# generates a custom target that will run standardese to generate the documentation
+standardese_generate(my_target
+                     INCLUDE_DIRECTORY .
+                     INPUT koura.hpp)
