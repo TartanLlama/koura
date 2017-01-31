@@ -1,3 +1,6 @@
+#ifndef KOURA_HPP
+#define KOURA_HPP
+
 #include <iostream>
 #include <optional>
 #include <cctype>
@@ -535,3 +538,5 @@ namespace koura {
         }
     }
 }
+
+#endif
