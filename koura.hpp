@@ -73,6 +73,10 @@ namespace koura {
         /// \throws `std::out_of_range` if there is no entity matching `key`.
         auto get_entity(const std::string& key) -> entity& { return m_entities.at(key); }
 
+
+        /// Return whether or not an entity with the given name exists
+        bool contains(const std::string& key) { return m_entities.count(key); }
+
     private:
         std::unordered_map<std::string, entity> m_entities;
     };
