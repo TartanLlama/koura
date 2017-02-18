@@ -126,11 +126,11 @@ TEST_CASE("if", "[if]") {
     SECTION ("simple if") {
         std::stringstream ss {"{% if name %}\n{{name}}\n{% else %}\nlol\n{% endif %}"};
         engine.render(ss, out, ctx);
-        REQUIRE( out.str() == "jim" );
+        REQUIRE( out.str() == "jim\n" );
     }
     SECTION ("simple else") {
         std::stringstream ss {"{% if dennis %}\n{{name}}\n{% else %}\nlol\n{% endif %}"};
         engine.render(ss, out, ctx);
-        REQUIRE( out.str() == "lol" );
+        REQUIRE( out.str() == "lol\n" );
     }
 }

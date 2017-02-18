@@ -97,6 +97,10 @@ namespace koura {
     class engine;
 
     namespace detail {
+        inline void eat_single_trailing_whitespace (std::istream& in) {
+            if (in.peek() == '\n') in.get();
+        }
+
         inline bool is_block_tag (std::string_view tag) {
             return (tag == "if" || tag == "for");
         }
@@ -239,6 +243,8 @@ namespace koura {
             if (in.get() != '}') {
                 throw render_error{in};
             }
+
+            eat_single_trailing_whitespace(in);
         }
 
         inline bool is_truthy (entity& ent) {
@@ -371,6 +377,7 @@ namespace koura {
             eat_whitespace(in);
             assert(in.get() == '%');
             assert(in.get() == '}');
+            eat_single_trailing_whitespace(in);
 
             if (cond) {
                 while (true) {
@@ -526,8 +533,7 @@ namespace koura {
             if (next == '%') {
                 eat_whitespace(in);
                 eng.handle_expression_tag(in,out,ctx);
-                //Get rid of one trailing whitespace
-                if (in.peek() == '\n') in.get();
+                eat_single_trailing_whitespace(in);
             }
         }
 
@@ -565,6 +571,7 @@ namespace koura {
                             }
                             in.get();
                             if (in.peek() == '}') {
+                                eat_single_trailing_whitespace(in);
                                 return;
                             }
                             in.get();
@@ -572,9 +579,6 @@ namespace koura {
                     }();
                 }
             }
-
-            //Get rid of one trailing whitespace
-            if (in.peek() == '\n') in.get();
         }
     }
 }
