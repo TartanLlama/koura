@@ -153,6 +153,30 @@ namespace koura {
             return name;
         }
 
+        inline entity& parse_nested_object (std::istream& in, entity& ent) {
+            if (ent.get_type() != entity::type::object) {
+                throw render_error{in};
+            }
+
+            auto field_name = get_identifier(in);
+            auto& ent_obj = ent.get_value<object_t>();
+
+            if (!ent_obj.count(field_name)) {
+                throw render_error{in};
+            }
+
+            auto& nested = ent_obj.at(field_name);
+
+            //We need to go deeper
+            if (in.peek() == '.') {
+                in.get();
+                auto& deeper = parse_nested_object(in, nested);
+                return deeper;
+            }
+
+            return nested;
+        }
+
         inline entity& parse_named_entity (std::istream& in, context& ctx) {
             auto name = get_identifier(in);
 
@@ -168,18 +192,7 @@ namespace koura {
 
                 if (next == '.') {
                     in.get();
-                    if (ent.get_type() != entity::type::object) {
-                        throw render_error{in};
-                    }
-
-                    auto field_name = get_identifier(in);
-                    auto& ent_obj = ent.get_value<object_t>();
-
-                    if (!ent_obj.count(field_name)) {
-                        throw render_error{in};
-                    }
-
-                    return ent_obj.at(field_name);
+                    return parse_nested_object(in, ent);
                 }
             }
             else if (ent.get_type() == entity::type::sequence) {
