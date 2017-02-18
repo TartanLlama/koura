@@ -116,3 +116,21 @@ TEST_CASE("multiple tags", "[multiple]") {
     engine.render(ss, out, ctx);
     REQUIRE( out.str() == "Hello world. Yes, world!" );
 }
+
+TEST_CASE("if", "[if]") {
+    koura::engine engine{};
+    koura::context ctx{};
+    ctx.add_entity("name", koura::text_t{"jim"});
+    std::stringstream out;
+
+    SECTION ("simple if") {
+        std::stringstream ss {"{% if name %}\n{{name}}\n{% else %}\nlol\n{% endif %}"};
+        engine.render(ss, out, ctx);
+        REQUIRE( out.str() == "jim" );
+    }
+    SECTION ("simple else") {
+        std::stringstream ss {"{% if dennis %}\n{{name}}\n{% else %}\nlol\n{% endif %}"};
+        engine.render(ss, out, ctx);
+        REQUIRE( out.str() == "lol" );
+    }
+}

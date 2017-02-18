@@ -373,10 +373,45 @@ namespace koura {
             assert(in.get() == '}');
 
             if (cond) {
-                process_until_tag(eng,in,out,ctx,"endif");
+                while (true) {
+                    stream_up_to_tag(in,out);
+                    if (is_next_tag(in, "elseif") || is_next_tag(in, "else")) {
+                        skip_until_tag(eng,in,out,ctx,"endif");
+                    }
+                    else if (is_next_tag(in, "endif")) {
+                        break;
+                    }
+                    else {
+                        process_tag(eng,in,out,ctx);
+                    }
+                }
             }
             else {
-                skip_until_tag(eng,in,out,ctx,"endif");
+                while (true) {
+                    skip_up_to_tag(in,out);
+
+                    //TODO ifelse
+
+                    if (is_next_tag(in, "else")) {
+                        eat_tag(in);
+                        while (true) {
+                            stream_up_to_tag(in,out);
+                            if (is_next_tag(in, "endif")) {
+                                break;
+                            }
+                            else {
+                                process_tag(eng,in,out,ctx);
+                            }
+                        }
+                        break;
+                    }
+                    else if (is_next_tag(in, "endif")) {
+                        break;
+                    }
+                    else {
+                        skip_tag(eng,in,out,ctx);
+                    }
+                }
             }
             eat_tag(in);
         }
@@ -528,6 +563,7 @@ namespace koura {
                             while (in.peek() != '%') {
                                 in.get();
                             }
+                            in.get();
                             if (in.peek() == '}') {
                                 return;
                             }
