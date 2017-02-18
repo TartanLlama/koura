@@ -65,7 +65,7 @@ namespace koura {
     public:
         /// Add an entity to the context with the key `key` and the value `value` to the context.
         template <class T>
-        void add_entity (std::string_view key, T&& value) {
+        void add_entity (const std::string& key, T&& value) {
             m_entities[key] = entity{std::forward<T>(value)};
         }
 
