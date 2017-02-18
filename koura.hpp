@@ -317,7 +317,8 @@ namespace koura {
         }
 
 
-        inline void handle_for_expression (engine& eng, std::istream& in, std::ostream& out, context& ctx) {
+        inline void handle_for_expression (engine& eng, std::istream& in, std::ostream& out, context& ctx,
+                                           const std::any& data) {
             auto loop_var_id = get_identifier(in);
             expect_text(in, "in");
             auto ent = parse_entity(in,ctx);
@@ -345,11 +346,13 @@ namespace koura {
             eat_tag(in);
         }
 
-        inline void handle_unless_expression (engine& eng, std::istream& in, std::ostream& out, context& ctx) {
+        inline void handle_unless_expression (engine& eng, std::istream& in, std::ostream& out, context& ctx,
+                                              const std::any& data) {
 
         }
 
-        inline void handle_set_expression (engine& eng, std::istream& in, std::ostream& out, context& ctx) {
+        inline void handle_set_expression (engine& eng, std::istream& in, std::ostream& out, context& ctx,
+                                           const std::any& data) {
             auto& ent = parse_named_entity(in, ctx);
             auto val = parse_entity(in, ctx);
 
@@ -377,7 +380,8 @@ namespace koura {
             assert(in.get() == '}');
         }
 
-        inline void handle_if_expression (engine& eng, std::istream& in, std::ostream& out, context& ctx) {
+        inline void handle_if_expression (engine& eng, std::istream& in, std::ostream& out, context& ctx,
+                                          const std::any& data) {
             bool cond = false;
             try {
                 auto ent = parse_entity(in, ctx);
@@ -441,17 +445,18 @@ namespace koura {
     class engine {
     public:
         /// The type of a custom expression handler.
-        using expression_handler_t = std::function<void(engine&,std::istream&, std::ostream&, context&)>;
+        using expression_handler_t = std::function<void(engine&,std::istream&, std::ostream&,
+                                                        context&, const std::any&)>;
 
         /// The type of a custom text filter.
         using filter_t = std::function<std::string(std::string_view, context&)>;
 
         engine() :
             m_expression_handlers{
-              {"if", detail::handle_if_expression},
-              {"unless", detail::handle_unless_expression},
-              {"set", detail::handle_set_expression},
-              {"for", detail::handle_for_expression}
+              {"if", std::make_pair(detail::handle_if_expression, nullptr)},
+              {"unless", std::make_pair(detail::handle_unless_expression, nullptr)},
+              {"set", std::make_pair(detail::handle_set_expression, nullptr)},
+              {"for", std::make_pair(detail::handle_for_expression, nullptr)}
             },
 
             m_filters{
@@ -472,8 +477,8 @@ namespace koura {
 
 
         /// Register a custom expression handler.
-        void register_custom_expression (std::string_view name, expression_handler_t handler) {
-            m_expression_handlers.emplace(std::string{name}, handler);
+        void register_custom_expression (std::string_view name, expression_handler_t handler, std::any data) {
+            m_expression_handlers.emplace(std::string{name}, std::make_pair(handler, std::move(data)));
         }
 
         /// Register a custom text filter.
@@ -514,7 +519,8 @@ namespace koura {
                 throw render_error{in};
             }
 
-            m_expression_handlers[tag_name](*this,in,out,ctx);
+            auto&& [handler, data] = m_expression_handlers[tag_name];
+            handler(*this,in,out,ctx,data);
         }
 
         auto handle_filter (std::istream& in, context& ctx, std::string_view text) -> std::string {
@@ -528,7 +534,7 @@ namespace koura {
         }
 
     private:
-        std::unordered_map<std::string, expression_handler_t> m_expression_handlers;
+        std::unordered_map<std::string, std::pair<expression_handler_t,std::any>> m_expression_handlers;
         std::unordered_map<std::string, filter_t> m_filters;
     };
 
